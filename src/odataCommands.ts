@@ -30,10 +30,10 @@ export function odataCombine() {
 }
 
 /**
- * Formats OData document with comments and line braks as a valid url.
+ * Formats OData document with comments and line breaks as a valid url.
  * @param text - OData document.
  */
-function odataFormatUrl(text: string) {
+export function odataFormatUrl(text: string) {
     let urlText = text
         // Transform to lines.
         .split('\n')
@@ -49,14 +49,14 @@ function odataFormatUrl(text: string) {
     let url = new URL(urlText);
 
     // Make sure query parameters do not have leading or trailing whitespaces.
-    url.searchParams.forEach((value, key, searchParams) => { 
+    for(let [key, value] of Array.from(url.searchParams)) {
         let keyClean = key.trim();
         let valueClean = value.trim();
         if (key.length != keyClean.length || value.length != valueClean.length) {
-            searchParams.delete(key);
-            searchParams.append(keyClean, valueClean);
+            url.searchParams.delete(key);
+            url.searchParams.append(keyClean, valueClean);
         }        
-    })
+    }
     return url.href;
 }
 
