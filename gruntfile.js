@@ -13,6 +13,16 @@
                         dest: "./out/src/odataParser.js",
                     }
                 ]
+            }, 
+            tests: {
+                files: [
+                    {
+                        expand: true,
+                        cwd: './src/test/fixtures/',
+                        src: ['**'],
+                        dest: './out/src/test/fixtures/',
+                    }
+                ]
             }
         },
     });
@@ -21,5 +31,6 @@
     grunt.loadNpmTasks("grunt-contrib-copy");
 
     grunt.registerTask("build", ["exec:pegjs", "copy:pegjs"]);
+    grunt.registerTask("pretest", ["copy:tests"]);
     grunt.registerTask("default", ["build"]);
 };

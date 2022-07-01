@@ -2,10 +2,10 @@
   "name": "vscode-odata",
   "displayName": "vscode-odata",
   "description": "OData query language support.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "stansw",
   "engines": {
-    "vscode": "^1.12.0"
+    "vscode": "^1.68.0"
   },
   "categories": [
     "Programming Languages"
@@ -127,22 +127,28 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "tsc -p ./",
-    "compile": "tsc -p ./",
-    "test": "node ./node_modules/vscode/bin/test"
+    "vscode:prepublish": "grunt && npm run compile",
+    "compile": "tsc -p ./ || exit 0",
+    "lint": "eslint . --ext .ts,.tsx",
+    "watch": "tsc -watch -p ./",
+    "pretest": "grunt pretest && npm run compile",
+    "test": "node ./out/src/test/runTests.js",
+    "clean": "rm -rf out"
   },
   "devDependencies": {
     "@types/chai": "^3.5.0",
     "@types/fs-extra": "^9.0.7",
     "@types/fs-promise": "^1.0.2",
+    "@types/glob": "^7.2.0",
     "@types/lodash": "^4.14.63",
-    "@types/mocha": "^2.2.32",
+    "@types/mocha": "^9.1.1",
     "@types/node": "^18.0.0",
     "@types/opn": "^3.0.28",
     "@types/vscode": "^1.68.1",
     "@types/xmldoc": "^0.5.0",
     "@vscode/test-electron": "^2.1.5",
     "chai": "^3.5.0",
+    "glob": "^8.0.3",
     "grunt": "^1.0.1",
     "grunt-contrib-copy": "^1.0.0",
     "grunt-exec": "^2.0.0",
