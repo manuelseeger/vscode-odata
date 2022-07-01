@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.1.1] - 
+- Changed scope of commands to current selection or consecutive non-empty lines.
+- Added command: Open.
+
 ## [0.1.0] - 2017-10-15
 - Changed scope of commands to current selection or consecutive non-empty lines.
 - Added command: Open.
