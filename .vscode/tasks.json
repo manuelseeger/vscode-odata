@@ -12,12 +12,29 @@
     
     "tasks": [
         {
-            "label": "npm",
+            "label": "compile",
             "type": "shell",
             "command": "npm",
             "args": [
                 "run",
                 "compile",
+                "--loglevel",
+                "silent"
+            ],
+            "isBackground": true,
+            "problemMatcher": "$tsc-watch",
+            "group": {
+                "_id": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "webpack",
+            "type": "shell",
+            "command": "npm",
+            "args": [
+                "run",
+                "webpack",
                 "--loglevel",
                 "silent"
             ],

@@ -1,8 +1,7 @@
 'use strict';
 
 import * as vscode from 'vscode';
-import * as open from 'opn'
-import { URL } from 'url'
+import { URL } from 'url';
 
 import {
     TextDocument, Position, Range, TextEditorEdit, TextEditor
@@ -127,7 +126,7 @@ export function odataOpen() {
             let range = getActiveRange(editor);
             let text = document.getText(range);
             let url = odataFormatUrl(text);
-            open(url);
+            vscode.env.openExternal(vscode.Uri.parse(url))
         }
         catch (exception) {
             vscode.window.showWarningMessage('Document does not represent a valid URL.');

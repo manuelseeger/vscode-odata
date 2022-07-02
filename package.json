@@ -25,7 +25,7 @@
     "onCommand:odata.open",
     "onCommand:odata.unescape"
   ],
-  "main": "./out/src/extension",
+  "main": "./dist/extension",
   "contributes": {
     "languages": [
       {
@@ -127,13 +127,17 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "grunt && npm run compile",
-    "compile": "tsc -p ./ || exit 0",
-    "lint": "eslint . --ext .ts,.tsx",
+    "vfscode:prepublish": "grunt && npm run compile",
+    "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "grunt pretest && npm run compile",
     "test": "node ./out/src/test/runTests.js",
-    "clean": "rm -rf out"
+    "test-compile": "tsc -p ./",
+    "vscode:prepublish": "npm run package",
+    "webpack": "webpack --mode development",
+    "webpack-dev": "webpack --mode development --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "vsce": "vsce package"
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.13",
@@ -141,7 +145,6 @@
     "@types/lodash": "^4.14.182",
     "@types/mocha": "^9.1.1",
     "@types/node": "^18.0.0",
-    "@types/opn": "^5.5.0",
     "@types/vscode": "^1.68.1",
     "@types/xmldoc": "^1.1.6",
     "@vscode/test-electron": "^2.1.5",
@@ -151,12 +154,16 @@
     "grunt-exec": "^3.0.0",
     "mocha": "^10.0.0",
     "pegjs": "^0.10.0",
-    "typescript": "^4.7.4"
+    "stream": "^0.0.2",
+    "ts-loader": "^9.3.1",
+    "typescript": "^4.7.4",
+    "vsce": "^2.9.2",
+    "webpack": "^5.73.0",
+    "webpack-cli": "^4.10.0"
   },
   "dependencies": {
     "fs-extra": "^10.1.0",
     "lodash": "^4.17.21",
-    "opn": "^6.0.0",
     "xmldoc": "^1.1.4"
   }
 }
