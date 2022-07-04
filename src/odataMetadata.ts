@@ -118,13 +118,12 @@ export class ODataMetadataParser {
 
     parseEntityType(element: XmlElement): IEntityType {
         return <IEntityType>{
-            name: element.valueWithPath("Name"),
+            name: element.attr.Name,
             properties: this.parseCollection<IProperty>(element, "Property", (e) => this.parseProperty(e))
         }
     }
 
     parseProperty(element: XmlElement): IProperty {
-        let a = 10;
         return <IProperty>{
             name: (<any>element).attr["Name"],
             type: element.valueWithPath("Type"),

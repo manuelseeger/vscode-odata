@@ -61,7 +61,7 @@
 		},
 		{
 			"name": "keyword.control.odata",
-			"match": "\\$(apply|count|filter|orderby|select|skip|top|expand)\\b"
+			"match": "\\$(apply|count|filter|orderby|select|skip|top|expand|format)\\b"
 		},
 		{
 			"name": "keyword.other.odata",
