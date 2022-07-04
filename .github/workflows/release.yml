@@ -18,9 +18,9 @@ jobs:
       - run: npm install
       - run: npm run vsce-latest
       - uses: actions/upload-artifact@v3
-          with:
-            name: build-latest
-            path: '*latest.vsix'
+        with:
+          name: build-latest
+          path: '*latest.vsix'
 #https://github.com/actions/create-release
   pre-release:
     name: Pre Release
