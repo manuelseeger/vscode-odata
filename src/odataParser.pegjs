@@ -12,7 +12,7 @@ root
 serviceRoot   = ( "https" / "http" ) "://" host (":" port)? ( "/" segment_nz )*
 host          = [A-Za-z][A-Za-z0-9+.-]+
 port          = DIGIT*
-segment_nz    = [A-Za-z0-9_-]+
+segment_nz    = [A-Za-z0-9._-]+
 
 
 select 

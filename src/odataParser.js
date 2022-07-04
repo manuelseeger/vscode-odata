@@ -171,8 +171,8 @@
         peg$c14 = peg$classExpectation([["A", "Z"], ["a", "z"]], false, false),
         peg$c15 = /^[A-Za-z0-9+.\-]/,
         peg$c16 = peg$classExpectation([["A", "Z"], ["a", "z"], ["0", "9"], "+", ".", "-"], false, false),
-        peg$c17 = /^[A-Za-z0-9_\-]/,
-        peg$c18 = peg$classExpectation([["A", "Z"], ["a", "z"], ["0", "9"], "_", "-"], false, false),
+        peg$c17 = /^[A-Za-z0-9._\-]/,
+        peg$c18 = peg$classExpectation([["A", "Z"], ["a", "z"], ["0", "9"], ".", "_", "-"], false, false),
         peg$c19 = "$select",
         peg$c20 = peg$literalExpectation("$select", false),
         peg$c21 = function(head, tail) {
