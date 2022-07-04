@@ -7,14 +7,21 @@ on:
       - "main"
 
 jobs:
+  build: 
+    name: "Build"
+    runs-on: "ubuntu-latest"
+    stesp:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 17
+      - run: npm install
+      - run: npm run vsce-latest
 #https://github.com/actions/create-release
   pre-release:
     name: "Pre Release"
     runs-on: "ubuntu-latest"
-
     steps:
-      - name: "Build & test"
-        run: npm run vsce-latest
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
@@ -25,6 +32,7 @@ jobs:
 
 #https://github.com/marketplace/actions/publish-release
   release:
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
     - name: Create Draft Release
