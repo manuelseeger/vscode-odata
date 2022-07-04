@@ -6,7 +6,6 @@ src/**
 **/*.map
 .gitignore
 tsconfig.json
-vsc-extension-quickstart.md
 gruntfile.js
 node_modules/
 .github/
