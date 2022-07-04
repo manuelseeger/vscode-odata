@@ -10,9 +10,9 @@ root
 
 // TODO: Implement full [RFC3986]
 serviceRoot   = ( "https" / "http" ) "://" host (":" port)? ( "/" segment_nz )*
-host          = [A-Za-z.]+
+host          = [A-Za-z][A-Za-z0-9+.-]+
 port          = DIGIT*
-segment_nz    = [A-Za-z_-]+
+segment_nz    = [A-Za-z0-9_-]+
 
 
 select 
