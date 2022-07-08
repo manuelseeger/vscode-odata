@@ -3,11 +3,7 @@ import * as _ from 'lodash';
 
 import { IODataMetadataService } from "./odataMetadata";
 import * as syntax from "./odataSyntax";
-
-import {
-    Definition, Location, CompletionItem, CompletionList, CompletionItemKind, CancellationToken, ProviderResult, DefinitionProvider
-} from 'vscode';
-
+import internal = require('stream');
 
 export class ODataDefinitionProvider implements vscode.DefinitionProvider {
 
@@ -23,29 +19,30 @@ export class ODataDefinitionProvider implements vscode.DefinitionProvider {
         if (!mapEntry) {
             return null;
         }
+        const range = document.getWordRangeAtPosition(position);
+        const selectedEntityName = document.getText(range);
+        const metadata = this.metadataService.getMetadataForDocument(tree);
+        const uri = vscode.Uri.file(mapEntry.path)
+        const lines = this.metadataService.getMetadataDocumentLines(tree);
 
         if (document.getWordRangeAtPosition(position, /\/[a-zA-Z]*/)) {
-            let range = document.getWordRangeAtPosition(position);
-            let selectedEntityName = document.getText(range);
-            let metadata = this.metadataService.getMetadataForDocument(tree);
-            let lines = this.metadataService.getMetadataDocumentLines(tree);
-            let uri = vscode.Uri.file(mapEntry.path)
-
-            let entities = _.chain(metadata.schemas)
-                            .flatMap(s => _.flatMap(s.entityContainers, c =>  _.flatMap(c.entitySets)))
+            let entities = this.metadataService.getEntityContainerItems(metadata)
                             .filter(es => es.name == selectedEntityName)
 
             return entities.flatMap(es => {
-                let entityType;
-                if (es.entityType.indexOf('.') >= 0) {
-                    entityType = es.entityType.split('.')[1];
-                } else {
-                    entityType = es.entityType;
-                }
+                let namespace = es.entityType.split('.')
+                let entityType = namespace.pop()
                 let rows = lines.map((l, i) => [l.indexOf(`<EntityType Name="${entityType}"`),i])
                                             .filter(r => r[0] >= 0)
-                return rows.map(r => new Location(uri, new vscode.Position(r[1], r[0])))
-            }).value()
+                return rows.map(r => new vscode.Location(uri, new vscode.Position(r[1], r[0])))
+            })
         }
+
+        const properties = _.uniqBy(this.metadataService.getProperties(metadata), p => p.name);
+        let propertyLocations = properties.filter(p => p.name == selectedEntityName)
+                    .flatMap(p => lines.map((l, i) => [l.indexOf(`<Property Name="${p.name}"`),i])
+                                                    .filter(r => r[0] >= 0))
+                    .map(pos => new vscode.Location(uri, new vscode.Position(pos[1], pos[0])))
+        return propertyLocations;
     }
 }

@@ -20,6 +20,7 @@ export interface IODataMetadataService {
     getEntityContainerItems(metadata: IMetadata): IEntitySet[];
     getMapEntry(tree: Syntax.SyntaxTree): IODataMetadataConfigurationMapEntry;
     getMetadataDocumentLines(tree: Syntax.SyntaxTree): string[];
+    getProperties(metadata: IMetadata): IProperty[];
 }
 
 export interface IEntityType {
@@ -217,9 +218,19 @@ export class LocalODataMetadataService implements IODataMetadataService {
 
     getEntityContainerItems(metadata: IMetadata): IEntitySet[] {
         let containerEntities = _.chain(metadata.schemas)
-            .flatMap(s => _.flatMap(s.entityContainers, c =>  _.flatMap(c.entitySets, e => e.name)))
-            .uniq();
-        return null;
+            .flatMap(s => _.flatMap(s.entityContainers, c =>  _.flatMap(c.entitySets)))
+            .uniq()
+            .value();
+        return containerEntities;
+    }
+
+    getProperties(metadata: IMetadata): IProperty[] {
+        let items = _.chain(metadata.schemas)
+                    .flatMap(s => _.flatMap(s.entityTypes))
+                    .flatMap(e => e.properties)
+                    .uniq()
+                    .value();
+        return items;
     }
 
     getMetadataPath(mapEntry): string {
