@@ -131,22 +131,26 @@ export class ODataMetadataCompletionItemProvider implements vscode.CompletionIte
                     .value();
 
                 return new CompletionList(containerEntities);
-            } else {
-                // complete for properties of entities found in the query document
-                let entitySetTypeNames = this.metadataService.getEntityContainerItems(metadata)
-                                        .filter(es => document.getText().indexOf(es.name) > -1)
-                                        .map(es => es.entityType.split('.').pop());
-
-                let items = _.chain(metadata.schemas)
-                    .flatMap(s => _.flatMap(s.entityTypes))
-                    .filter(e => _.includes(entitySetTypeNames, e.name))
-                    .flatMap(e => e.properties.map(p => p.name))
-                    .uniq()
-                    .map(p => new CompletionItem(p, CompletionItemKind.Property))
-                    .value();
-
-                return new CompletionList(items);
+            } 
+            
+            if (document.getWordRangeAtPosition(position, /\$(format|top|skip|count)=.*/)) {
+                return null;
             }
+            // complete for properties of entities found in the query document
+            let entitySetTypeNames = this.metadataService.getEntityContainerItems(metadata)
+                                    .filter(es => document.getText().indexOf(es.name) > -1)
+                                    .map(es => es.entityType.split('.').pop());
+
+            let items = _.chain(metadata.schemas)
+                .flatMap(s => _.flatMap(s.entityTypes))
+                .filter(e => _.includes(entitySetTypeNames, e.name))
+                .flatMap(e => e.properties.map(p => p.name))
+                .uniq()
+                .map(p => new CompletionItem(p, CompletionItemKind.Property))
+                .value();
+
+            return new CompletionList(items);
+            
         } catch (error) {
             if (error instanceof syntax.SyntaxError) {
                 let syntaxError = <syntax.SyntaxError>error;

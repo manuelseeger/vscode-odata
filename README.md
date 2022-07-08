@@ -1,14 +1,19 @@
 # OData for Visual Studio Code
 OData for Visual Studio Code is an extension for [Visual Studio Code](https://code.visualstudio.com) that adds rich language support for the [OData](http://www.odata.org) query language.
 
+> This is a fork from [/StanislawSwierc/vscode-odata](https://github.com/StanislawSwierc/vscode-odata), which appears to be discontinued. The fork fixes some issues and adds features. All the heavy lifting has been done by the original authors. \
+[Manuel Seeger (@manuelseeger)](https://github.com/manuelseeger)
+
 ## Features
 In the first release this extension adds the capabilities listed below. Only stable capabilities are enabled by default, while others can be turned on in the settings.
 
 * syntax highlighting (enabled)
 * query encoding/decoding (enabled)
 * syntax-aware formatting (disabled)
-* metadata-driven code completion (disabled)
+* metadata-driven code completion (enabled*)
 * diagnostics (disabled)
+
+(*) Code completion is turned on by default. Metadata-driven code completion is active if a metadata file is registered in settings. 
 
 ## Commands
 
@@ -38,9 +43,7 @@ Decodes URI. This command is really helpful when you copy query from a browser o
 Below is an example of a [settings.json](https://code.visualstudio.com/Docs/customization/userandworkspace) file for VSCode settings applicable to this extension. Continue to the next section for more in-depth documentation. This example enables `completion` feature and specifies where to find the metadata for queries which target `https://stansw.analytics.visualstudio.com/vscode-odata/_odata` endpoint.
 
 ```json
-{
-    "odata.completion.enable": true,
-    
+{    
     "odata.diagnostic.enable": false,
 
     "odata.format.enable": true,
@@ -79,7 +82,7 @@ Associate metadata files in the current project. This setting consists of a list
     "odata.metadata.map": [
         { 
             "url": "https://stansw.analytics.visualstudio.com/vscode-odata/_odata", 
-            "path": "metadata.xml"
+            "path": "C:/Sources/vscode-odata/test/fixtures/metadata.xml"
         },
         { 
             "url": "https://stansw.analytics.visualstudio.com/proj/_odata", 
@@ -88,7 +91,8 @@ Associate metadata files in the current project. This setting consists of a list
     ]
 }
 ```
-If you set the `odata.metadata.map` setting then editor will suggest names of the properties and entities. Please notice that currently these suggestions are not context-sensitive and all property names are used regardless the entity you are working with.
+
+If you set the `odata.metadata.map` setting then editor will suggest names of the properties and entities. The completions are context-aware to an extend. Properties are suggested only for entitysets in the document. 
 
 Once mapping is defined, extension will try to find the right metadata by looking for the first url that matches the beginning of the query. For the example query below extension would use metadata file at `C:/Sources/vscode-odata/test/fixtures/metadata.xml` because its mapping url `https://stansw.analytics.visualstudio.com/vscode-odata/_odata` matches the beginning of the query.
 ```

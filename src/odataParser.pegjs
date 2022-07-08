@@ -1,5 +1,5 @@
 root
-  = serviceRoot:$serviceRoot _ '?' error:error? { 
+  = serviceRoot:$serviceRoot _ '?'? error:error? { 
     return { 
       kind: "Uri", 
       serviceRoot: serviceRoot,
