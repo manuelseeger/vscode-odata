@@ -9,6 +9,7 @@ import { ODataDiagnosticProvider } from './odataDiagnostic';
 import { ODataDocumentFormattingEditProvider, ODataFormattingConfiguration } from "./odataFormatter";
 import { LocalODataMetadataService, ODataMetadataConfiguration } from "./odataMetadata";
 import { ODataDefinitionProvider } from "./odataDefinitions";
+import { ODataHoverProvider } from "./odataHovers";
 import { odataCombine, odataDecode, odataEncode, odataEscape, odataUnescape, odataOpen } from "./odataCommands";
 import {    
     ODataDefaultCompletionItemProvider, ODataMetadataCompletionItemProvider, 
@@ -53,7 +54,9 @@ export function activate(context: vscode.ExtensionContext) {
 
         let metadataDefinitionsProvider = new ODataDefinitionProvider(metadataService);
         context.subscriptions.push(vscode.languages.registerDefinitionProvider(ODataMode, metadataDefinitionsProvider));
-    }
+
+        let metadataHoverProvider = new ODataHoverProvider(metadataService);
+        context.subscriptions.push(vscode.languages.registerHoverProvider(ODataMode, metadataHoverProvider))}
 
     if (configuration.format.enable) {
         let documentFormattingEditProvider = new ODataDocumentFormattingEditProvider(configuration.format);

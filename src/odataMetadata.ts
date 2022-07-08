@@ -43,6 +43,7 @@ export interface IProperty {
     type: string;
     nullable?: boolean;
     annotations?: IAnnotation[];
+    attr?: {string: string}
 }
 
 export interface INavigationProperty {
@@ -135,8 +136,8 @@ export class ODataMetadataParser {
 
     parseNavigationPropertyBinding(element: XmlElement): INavigationPropertyBinding {
         return <INavigationPropertyBinding>{
-            path: element.valueWithPath("Path"),
-            target: element.valueWithPath("Target")
+            path: getChildOrProperty(element, "Path"),
+            target: getChildOrProperty(element, "Target")
         }
     }
 
@@ -151,8 +152,9 @@ export class ODataMetadataParser {
         return <IProperty>{
             name: getChildOrProperty(element, "Name"),
             type: getChildOrProperty(element, "Type"),
-            nullable: element.valueWithPath("Nullable") ? !!element.valueWithPath("Nullable") : undefined,
-            annotations: this.parseCollection(element, "Annotation", (e) => this.parseAnnotation(e))
+            nullable: getChildOrProperty(element, "Nullable") ? !!getChildOrProperty(element, "Nullable") : undefined,
+            annotations: this.parseCollection(element, "Annotation", (e) => this.parseAnnotation(e)),
+            attr: element.attr
         };
     }
 
