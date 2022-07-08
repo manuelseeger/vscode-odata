@@ -426,6 +426,9 @@
             s3 = peg$FAILED;
             if (peg$silentFails === 0) { peg$fail(peg$c1); }
           }
+          if (s3 === peg$FAILED) {
+            s3 = null;
+          }
           if (s3 !== peg$FAILED) {
             s4 = peg$parseerror();
             if (s4 === peg$FAILED) {

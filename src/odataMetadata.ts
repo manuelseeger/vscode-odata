@@ -3,19 +3,35 @@ import * as Syntax from './odataSyntax'
 import * as fs from 'fs-extra';
 import * as path from 'path'
 import * as vscode from 'vscode';
+import * as _ from 'lodash';
 
 export interface ODataMetadataConfiguration {
-    map: Array<{ url: string, path: string }>;
+    map: Array<IODataMetadataConfigurationMapEntry>;
+}
+
+export interface IODataMetadataConfigurationMapEntry {
+    url: string, 
+    path: string
 }
 
 export interface IODataMetadataService {
-    getMetadataForDocument(uri: string, tree: Syntax.SyntaxTree): Thenable<IMetadata>;
+    getMetadataForDocument(tree: Syntax.SyntaxTree): IMetadata;
+    hasMapEntry(tree: Syntax.SyntaxTree): boolean;
+    getEntityContainerItems(metadata: IMetadata): IEntitySet[];
+    getMapEntry(tree: Syntax.SyntaxTree): IODataMetadataConfigurationMapEntry;
+    getMetadataDocumentLines(tree: Syntax.SyntaxTree): string[];
+    getProperties(metadata: IMetadata): IProperty[];
 }
 
 export interface IEntityType {
     name: string;
     key?: IPropertyRef[];
     properties?: IProperty[];
+}
+
+export interface IMapEntry {
+    lines: Array<string>;
+    metadata: IMetadata;
 }
 
 export interface IPropertyRef {
@@ -27,6 +43,7 @@ export interface IProperty {
     type: string;
     nullable?: boolean;
     annotations?: IAnnotation[];
+    attr?: {string: string}
 }
 
 export interface INavigationProperty {
@@ -72,6 +89,14 @@ export interface IMetadata {
     schemas?: ISchema[];
 }
 
+function getChildOrProperty(element: XmlElement, nodeName: string): string {
+    if (element.attr[nodeName]) {
+        return element.attr[nodeName];
+    } else {
+        return element.valueWithPath(nodeName);
+    }
+}
+
 export class ODataMetadataParser {
 
     parse(text: string): IMetadata {
@@ -87,7 +112,7 @@ export class ODataMetadataParser {
 
     parseSchema(element: XmlElement): ISchema {
         return <ISchema>{
-            namespace: element.valueWithPath("Namespace"),
+            namespace: getChildOrProperty(element, "Namespace"),
             entityTypes: this.parseCollection<IEntityType>(element, "EntityType", (e) => this.parseEntityType(e)),
             entityContainers: this.parseCollection<IEntityContainer>(element, "EntityContainer", (e) => this.parseEntityContainer(e))
         }
@@ -95,15 +120,15 @@ export class ODataMetadataParser {
 
     parseEntityContainer(element: XmlElement): IEntityContainer {
         return <IEntityContainer>{
-            name: element.valueWithPath("Name"),
+            name: getChildOrProperty(element, "Name"),
             entitySets: this.parseCollection<IEntitySet>(element, "EntitySet", (e) => this.parseEntitySet(e))
         }
     }
 
     parseEntitySet(element: XmlElement): IEntitySet {
         return <IEntitySet>{
-            name: element.valueWithPath("Name"),
-            entityType: element.valueWithPath("EntityType"),
+            name: getChildOrProperty(element, "Name"),
+            entityType: getChildOrProperty(element, "EntityType"),
             navigationPropertyBindings: this.parseCollection<INavigationPropertyBinding>(element, "NavigationPropertyBinding", (e) => this.parseNavigationPropertyBinding(e)),
             annotations: this.parseCollection(element, "Annotation", (e) => this.parseAnnotation(e))
         }
@@ -111,24 +136,25 @@ export class ODataMetadataParser {
 
     parseNavigationPropertyBinding(element: XmlElement): INavigationPropertyBinding {
         return <INavigationPropertyBinding>{
-            path: element.valueWithPath("Path"),
-            target: element.valueWithPath("Target")
+            path: getChildOrProperty(element, "Path"),
+            target: getChildOrProperty(element, "Target")
         }
     }
 
     parseEntityType(element: XmlElement): IEntityType {
         return <IEntityType>{
-            name: element.attr.Name,
+            name: getChildOrProperty(element, "Name"),
             properties: this.parseCollection<IProperty>(element, "Property", (e) => this.parseProperty(e))
         }
     }
 
     parseProperty(element: XmlElement): IProperty {
         return <IProperty>{
-            name: (<any>element).attr["Name"],
-            type: element.valueWithPath("Type"),
-            nullable: element.valueWithPath("Nullable") ? !!element.valueWithPath("Nullable") : undefined,
-            annotations: this.parseCollection(element, "Annotation", (e) => this.parseAnnotation(e))
+            name: getChildOrProperty(element, "Name"),
+            type: getChildOrProperty(element, "Type"),
+            nullable: getChildOrProperty(element, "Nullable") ? !!getChildOrProperty(element, "Nullable") : undefined,
+            annotations: this.parseCollection(element, "Annotation", (e) => this.parseAnnotation(e)),
+            attr: element.attr
         };
     }
 
@@ -185,38 +211,77 @@ export function createPropertyMap(metadata: IMetadata): { [id: string]: IPropert
 
 export class LocalODataMetadataService implements IODataMetadataService {
     configuration: ODataMetadataConfiguration;
-    cache: { [key: string]: Promise<IMetadata>; } = {};
+    cache: { [key: string]: IMapEntry } = {};
+    
 
-    constructor(configuraiton: ODataMetadataConfiguration) {
-        this.configuration = configuraiton;
+    constructor(configuration: ODataMetadataConfiguration) {
+        this.configuration = configuration;
     }
 
-    getMetadataForDocument(uri: string, tree: Syntax.SyntaxTree): Promise<IMetadata> {
+    getEntityContainerItems(metadata: IMetadata): IEntitySet[] {
+        let containerEntities = _.chain(metadata.schemas)
+            .flatMap(s => _.flatMap(s.entityContainers, c =>  _.flatMap(c.entitySets)))
+            .uniq()
+            .value();
+        return containerEntities;
+    }
+
+    getProperties(metadata: IMetadata): IProperty[] {
+        let items = _.chain(metadata.schemas)
+                    .flatMap(s => _.flatMap(s.entityTypes))
+                    .flatMap(e => e.properties)
+                    .uniq()
+                    .value();
+        return items;
+    }
+
+    getMetadataPath(mapEntry): string {
+        return path.isAbsolute(mapEntry.path)
+                ? mapEntry.path
+                : vscode.workspace.workspaceFolders[0]
+                ? path.join(vscode.workspace.workspaceFolders[0].toString(), mapEntry.path)
+                : mapEntry.path;
+    }
+
+    hasMapEntry(tree: Syntax.SyntaxTree): boolean {
         let serviceRoot = tree.root.serviceRoot.toLowerCase();
-        let mapEntry = this.configuration.map.find(_ => serviceRoot.startsWith(_.url.toLocaleLowerCase()));
+        return !!this.configuration.map.find(m => serviceRoot.startsWith(m.url.toLowerCase()));
+    }
+
+    getMapEntry(tree: Syntax.SyntaxTree): IODataMetadataConfigurationMapEntry {
+        let serviceRoot = tree.root.serviceRoot.toLowerCase();
+        return this.configuration.map.find(m => serviceRoot.startsWith(m.url.toLowerCase()));
+    }
+
+    getMetadataDocumentLines(tree: Syntax.SyntaxTree): string[] {
+        let mapEntry = this.getMapEntry(tree);
         if (mapEntry) {
             if (this.cache[mapEntry.path] === undefined) {
-                let metadataPath = path.isAbsolute(mapEntry.path)
-                    ? mapEntry.path
-                    : vscode.workspace.workspaceFolders[0]
-                    ? path.join(vscode.workspace.workspaceFolders[0].toString(), mapEntry.path)
-                    : mapEntry.path;
+                let metadataPath = this.getMetadataPath(mapEntry);
+                let metadataFile = fs.readFileSync(metadataPath, { encoding: "utf8" });
 
-                this.cache[mapEntry.path] = fs.readFile(metadataPath, { encoding: "utf8" })
-                    .then(
-                        text => {
-                            let parser = new ODataMetadataParser();
-                            return parser.parse(text);
-                        },
-                        reason => {
-                            console.error(reason);
-                            return null
-                        }
-                    );
+                this.cache[mapEntry.path] = {
+                    metadata: new ODataMetadataParser().parse(metadataFile),
+                    lines: metadataFile.split('\n')
+                }
             }
-            return this.cache[mapEntry.path];
-        } else {
-            return Promise.reject(`There is no entry registered in the 'odata.metadata.map' for uri '${serviceRoot}'`);
+            return this.cache[mapEntry.path].lines
+        }
+    }
+
+    getMetadataForDocument(tree: Syntax.SyntaxTree): IMetadata {
+        let mapEntry = this.getMapEntry(tree);
+        if (mapEntry) {
+            if (this.cache[mapEntry.path] === undefined) {
+                let metadataPath = this.getMetadataPath(mapEntry);
+                let metadatFile = fs.readFileSync(metadataPath, { encoding: "utf8" });
+
+                this.cache[mapEntry.path] = {
+                    metadata: new ODataMetadataParser().parse(metadatFile),
+                    lines: metadatFile.split('\n')
+                }
+            }
+            return this.cache[mapEntry.path].metadata;
         }
     }
 }
