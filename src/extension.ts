@@ -7,120 +7,25 @@ import * as _ from 'lodash';
 import { ODataMode } from './odataMode';
 import { ODataDiagnosticProvider } from './odataDiagnostic';
 import { ODataDocumentFormattingEditProvider, ODataFormattingConfiguration } from "./odataFormatter";
-import { IODataMetadataService, LocalODataMetadataService, ODataMetadataConfiguration } from "./odataMetadata";
+import { LocalODataMetadataService, ODataMetadataConfiguration } from "./odataMetadata";
+import { ODataDefinitionProvider } from "./odataDefinitions";
 import { odataCombine, odataDecode, odataEncode, odataEscape, odataUnescape, odataOpen } from "./odataCommands";
-import * as syntax from "./odataSyntax";
-
-import {
-    TextDocument, Position, CompletionItem, CompletionList, CompletionItemKind, Hover, Range, SymbolInformation, Diagnostic,
-    TextEdit, FormattingOptions, MarkedString, CancellationToken, ProviderResult
-} from 'vscode';
-
-
-class ODataCompletionItemProvider implements vscode.CompletionItemProvider {
-    triggerCharacters = [".", "=", ",", "(", "/", "$", "'"];
-    metadataService: IODataMetadataService;
-
-    constructor(metadataService: IODataMetadataService) {
-        this.metadataService = metadataService;
-    }
-
-    provideCompletionItems(document: TextDocument, position: Position, token: CancellationToken): ProviderResult<CompletionList> {
-        if (document.getWordRangeAtPosition(position, /\$[a-zA-Z]*/)) {
-            return new CompletionList([
-                {
-                    label: "$apply",
-                    insertText: "apply",
-                    filterText: "apply",
-                    documentation: "Applies set transformations, separated by forward slashes.",
-                    kind: CompletionItemKind.Keyword
-                },
-                {
-                    label: "$filter",
-                    insertText: "filter",
-                    filterText: "filter",
-                    documentation: "Filters collection of resources.",
-                    kind: CompletionItemKind.Keyword
-                },
-                {
-                    label: "$select",
-                    insertText: "select",
-                    filterText: "select",
-                    documentation: "Selects a specific set of properties for each entity or complex type.",
-                    kind: CompletionItemKind.Keyword
-                },
-                {
-                    label: "$skip",
-                    insertText: "skip",
-                    filterText: "skip",
-                    documentation: "Requests a number of items in the queried collection to be skipped and not included in the result.",
-                    kind: CompletionItemKind.Keyword
-                },
-                {
-                    label: "$top",
-                    insertText: "top",
-                    filterText: "top",
-                    documentation: "Limits the number of items in the queried collection to be included in the result.",
-                    kind: CompletionItemKind.Keyword
-                }
-                // TODO: add the rest. 
-            ]);
-        }
-
-        try {
-            let tree = syntax.Parser.parse(document.getText());
-            return this.metadataService.getMetadataForDocument(document.uri.toString(), tree)
-                .then(metadata => {
-                    let functions = [
-                        new CompletionItem("filter", CompletionItemKind.Function),
-                        new CompletionItem("groupby", CompletionItemKind.Function),
-                        new CompletionItem("aggregate", CompletionItemKind.Function),
-                        new CompletionItem("contains", CompletionItemKind.Function),
-                        new CompletionItem("startswith", CompletionItemKind.Function)
-                        // TODO: Add all functions
-                    ];
-
-                    let items = _.chain(metadata.schemas)
-                        .flatMap(s => _.flatMap(s.entityTypes, e => _.flatMap(e.properties, p => p.name)))
-                        .uniq()
-                        .map(p => new CompletionItem(p, CompletionItemKind.Property))
-                        .concat(functions)
-                        .value();
-
-                    return new CompletionList(items);
-                }, reason => {
-                    console.error(reason);
-                });
-        } catch (error) {
-            if (error instanceof syntax.SyntaxError) {
-                let syntaxError = <syntax.SyntaxError>error;
-                console.error(syntaxError.message);
-            } else {
-                console.error(error);
-            }
-        }
-    }
-}
-
+import {    
+    ODataDefaultCompletionItemProvider, ODataMetadataCompletionItemProvider, 
+    ODataSystemQueryCompletionItemProvider 
+} from './odataCompletions'
 
 interface ODataConfiguration extends vscode.WorkspaceConfiguration {
     diagnostic: {
-        enable: boolean;
-    };
-    completion: {
         enable: boolean;
     };
     format: ODataFormattingConfiguration;
     metadata: ODataMetadataConfiguration;
 }
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
-    // Use the console to output diagnostic information (console.log) and errors (console.error)
-    // This line of code will only be executed once when your extension is activated
-    console.log('Congratulations, your extension "vscode-odata" is now active!');
+    console.log('Extension "vscode-odata" is now active');
 
     let configuration = vscode.workspace.getConfiguration('odata') as ODataConfiguration;
 
@@ -132,12 +37,22 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('odata.unescape', odataUnescape));
     context.subscriptions.push(vscode.commands.registerCommand('odata.open', odataOpen));
     
+    const systemQueryCompleteProvider = new ODataSystemQueryCompletionItemProvider()
+    context.subscriptions.push(vscode.languages.registerCompletionItemProvider(ODataMode, 
+        systemQueryCompleteProvider, ...systemQueryCompleteProvider.triggerCharacters))
     
-    if (configuration.completion.enable) {
+    const defaultCompleteProvider = new ODataDefaultCompletionItemProvider()
+        context.subscriptions.push(vscode.languages.registerCompletionItemProvider(ODataMode, 
+            defaultCompleteProvider, ...defaultCompleteProvider.triggerCharacters))
+    
+    if (configuration.metadata.map && configuration.metadata.map.length > 0) {
         let metadataService = new LocalODataMetadataService(configuration.metadata);
-        let completionItemProvider = new ODataCompletionItemProvider(metadataService);
+        let metadataCompletionItemProvider = new ODataMetadataCompletionItemProvider(metadataService);
         context.subscriptions.push(vscode.languages.registerCompletionItemProvider(ODataMode,
-            completionItemProvider, ...completionItemProvider.triggerCharacters));
+            metadataCompletionItemProvider, ...metadataCompletionItemProvider.triggerCharacters));
+
+        let metadataDefinitionsProvider = new ODataDefinitionProvider(metadataService);
+        context.subscriptions.push(vscode.languages.registerDefinitionProvider(ODataMode, metadataDefinitionsProvider));
     }
 
     if (configuration.format.enable) {
@@ -153,6 +68,5 @@ export function activate(context: vscode.ExtensionContext) {
     }
 }
 
-// this method is called when your extension is deactivated
 export function deactivate() {
 }

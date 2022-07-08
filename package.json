@@ -57,11 +57,6 @@
           "default": false,
           "description": "Enable/disable default OData diagnostic (requires restart)"
         },
-        "odata.completion.enable": {
-          "type": "boolean",
-          "default": false,
-          "description": "Enable/disable default OData completion (requires restart)"
-        },
         "odata.format.enable": {
           "type": "boolean",
           "default": true,
@@ -79,7 +74,7 @@
         },
         "odata.metadata.map": {
           "type": "array",
-          "description": "Associate OData metadata files in the current project",
+          "description": "Associate OData metadata files in the current project and provide completion",
           "default": [],
           "items": {
             "type": "object",
@@ -92,7 +87,7 @@
               "path": {
                 "type": "string",
                 "default": "/user.metadata.xml",
-                "description": "A URL to OData endpoint."
+                "description": "Absolute path to a local metadata file"
               }
             }
           }
@@ -127,11 +122,11 @@
     ]
   },
   "scripts": {
-    "vfscode:prepublish": "grunt && npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "grunt pretest && npm run compile",
+    "pretest": " npm run compile && shx cp -R ./src/test/fixtures/ ./out/src/test/fixtures/",
     "test": "node ./out/src/test/runTests.js",
+    "pegjs": "node node_modules/pegjs/bin/pegjs --format umd -o ./src/odataParser.js ./src/odataParser.pegjs",
     "test-compile": "tsc -p ./",
     "vscode:prepublish": "npm run package",
     "webpack": "webpack --mode development",
@@ -152,11 +147,9 @@
     "assert": "^2.0.0",
     "constants": "^0.0.2",
     "glob": "^8.0.3",
-    "grunt": "^1.5.3",
-    "grunt-contrib-copy": "^1.0.0",
-    "grunt-exec": "^3.0.0",
     "mocha": "^10.0.0",
     "pegjs": "^0.10.0",
+    "shx": "^0.3.4",
     "stream": "^0.0.2",
     "ts-loader": "^9.3.1",
     "typescript": "^4.7.4",

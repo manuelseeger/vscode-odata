@@ -62,9 +62,6 @@ This extension can be controlled with the following settings. Please notice that
 #### `odata.diagnostic.enable` (requires restart)
 Enable/disable default diagnostics.
 
-#### `odata.completion.enable` (requires restart)
-Enable/disable completion. Currently completion is driven by the metadata. If you set the `odata.metadata.map` setting correctly (see below) then editor will suggest names of the properties and entities. Please notice that currently these suggestions are not context-sensitive and all property names are used regardless the entity you are working with. This will be improved in the future releases.
-
 #### `odata.format.enable` (requires restart)
 Enable/disable formatter (`Alt+Shift+F`).
 
@@ -91,6 +88,7 @@ Associate metadata files in the current project. This setting consists of a list
     ]
 }
 ```
+If you set the `odata.metadata.map` setting then editor will suggest names of the properties and entities. Please notice that currently these suggestions are not context-sensitive and all property names are used regardless the entity you are working with.
 
 Once mapping is defined, extension will try to find the right metadata by looking for the first url that matches the beginning of the query. For the example query below extension would use metadata file at `C:/Sources/vscode-odata/test/fixtures/metadata.xml` because its mapping url `https://stansw.analytics.visualstudio.com/vscode-odata/_odata` matches the beginning of the query.
 ```
