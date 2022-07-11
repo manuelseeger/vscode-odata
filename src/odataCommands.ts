@@ -40,6 +40,7 @@ export function odataFormatUrl(text: string) {
         .filter(t => !t.match(/^\s*\/\//))
         // Remove extra whitespaces and join into a single line.
         .map(t => t.trim())
+        .filter(t => t != '')
         .join(' ')
         // Make sure there are no spaces in the fragment part or the URI.
         .replace(/\s+\?/, "?");
@@ -137,18 +138,9 @@ export function odataOpen() {
 function getActiveRange(editor: TextEditor): Range {
     let selection = editor.selection;
     if (selection.isEmpty) {
-        // Empy selection indicates line selection mode.
-        let startLine = selection.start.line;
-        let endLine = selection.end.line;
-        // Extend selection to not-empty previous lines.
-        while (startLine > 0 && editor.document.lineAt(startLine - 1).isEmptyOrWhitespace == false) {
-            startLine -= 1;
-        }
-        // Extend selection to non-empty next lines.
-        while (endLine < editor.document.lineCount - 1 && editor.document.lineAt(endLine + 1).isEmptyOrWhitespace == false) {
-            endLine += 1;
-        }
-        return new Range(new Position(startLine, 0), editor.document.lineAt(endLine).range.end);
+        let firstLine = editor.document.lineAt(0);
+        let lastLine = editor.document.lineAt(editor.document.lineCount - 1);
+        return new Range(firstLine.range.start, lastLine.range.end);
     } else {
         return selection;
     }
