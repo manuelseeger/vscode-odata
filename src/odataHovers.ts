@@ -14,7 +14,8 @@ export class ODataHoverProvider implements vscode.HoverProvider {
 
     provideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.Hover> {
         let tree = syntax.Parser.parse(document.getText());
-        let mapEntry = this.metadataService.getMapEntry(tree);
+        let serviceRoot = tree.root.serviceRoot.toString();
+        let mapEntry = this.metadataService.getMapEntry(serviceRoot);
         if (!mapEntry) {
             return null;
         }
@@ -22,9 +23,9 @@ export class ODataHoverProvider implements vscode.HoverProvider {
         const range = document.getWordRangeAtPosition(position);
         const selectedEntityName = document.getText(range);
 
-        const metadata = this.metadataService.getMetadataForDocument(tree);
+        const metadata = this.metadataService.getMetadataDocument(serviceRoot);
 
-        let entitySet = _.find(this.metadataService.getEntityContainerItems(metadata),
+        let entitySet = _.find(metadata.getEntityContainerItems(),
                             { name: selectedEntityName})
         
         if (entitySet) {

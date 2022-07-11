@@ -15,6 +15,16 @@ In the first release this extension adds the capabilities listed below. Only sta
 
 (*) Code completion is turned on by default. Metadata-driven code completion is active if a metadata file is registered in settings. 
 
+## Metadata Awareness
+The extension provides basic IntelliSense for the OData query language based on service metadata. 
+### Metadata driven code completion
+Provide basic Intellisense based on OData metadata: 
+![odata-combine](./images/metadata-complete.gif)
+
+### Metadata driven code navigation
+Navigate to metadata definitions from entities and properties: 
+![odata-combine](./images/metadata-definition.gif)
+
 ## Commands
 
 #### OData Open
@@ -23,17 +33,17 @@ Combines multi-line query into a one-line URL and opens it in a browser.
 #### OData Combine
 Combines multi-line query into a one-line URL.
 
-![odata-combine](https://raw.githubusercontent.com/StanislawSwierc/vscode-odata/master/images/odata-combine.gif)
+![odata-combine](./images/odata-combine.gif)
 
 #### OData Encode URI
 Encodes URI and replaces unsafe ASCII characters with a "%" followed by two hexadecimal digits. 
 
-![odata-encode](https://raw.githubusercontent.com/StanislawSwierc/vscode-odata/master/images/odata-encode.gif)
+![odata-encode](./images//odata-encode.gif)
 
 #### OData Decode URI
 Decodes URI. This command is really helpful when you copy query from a browser or log files that store all URIs in the encoded form.
 
-![odata-decode](https://raw.githubusercontent.com/StanislawSwierc/vscode-odata/master/images/odata-decode.gif)
+![odata-decode](./images/odata-decode.gif)
 
 
 ## Settings

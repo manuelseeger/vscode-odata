@@ -2,7 +2,7 @@ import * as assert from 'assert';
 
 import { odataFormatUrl } from '../../odataCommands';
 
-suite('Url Format Tests', () => {
+suite('OData Commands Tests', () => {
     let odataQueryDocument = `https://my555555-sso.crm.ondemand.com/sap/c4c/odata-sso/v1/customer/IndividualCustomerCollection?
     $filter=OwnerID eq '2341978'
     &$select=FirstName,LastName,CustomerID

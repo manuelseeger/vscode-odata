@@ -124,7 +124,7 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": " npm run compile && shx cp -R ./src/test/fixtures/ ./out/src/test/fixtures/",
+    "pretest": "shx rm -rf ./out && npm run compile && shx cp -R ./src/test/fixtures/ ./out/src/test/fixtures/",
     "test": "node ./out/src/test/runTests.js",
     "pegjs": "node node_modules/pegjs/bin/pegjs --format umd -o ./src/odataParser.js ./src/odataParser.pegjs",
     "test-compile": "tsc -p ./",
