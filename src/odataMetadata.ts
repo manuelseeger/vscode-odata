@@ -1,5 +1,4 @@
 import { XmlDocument, XmlElement } from 'xmldoc';
-import * as Syntax from './odataSyntax'
 import * as fs from 'fs-extra';
 import * as path from 'path'
 import * as vscode from 'vscode';
@@ -15,12 +14,16 @@ export interface IODataMetadataConfigurationMapEntry {
 }
 
 export interface IODataMetadataService {
-    getMetadataForDocument(tree: Syntax.SyntaxTree): IMetadata;
-    hasMapEntry(tree: Syntax.SyntaxTree): boolean;
-    getEntityContainerItems(metadata: IMetadata): IEntitySet[];
-    getMapEntry(tree: Syntax.SyntaxTree): IODataMetadataConfigurationMapEntry;
-    getMetadataDocumentLines(tree: Syntax.SyntaxTree): string[];
-    getProperties(metadata: IMetadata): IProperty[];
+    getMetadataDocument(serviceRoot: string): IMetadata;
+    hasMapEntry(serviceRoot: string): boolean;
+    getMapEntry(serviceRoot: string): IODataMetadataConfigurationMapEntry;
+    getMetadataDocumentLines(serviceRoot: string): string[];
+}
+
+export interface IMetadata {
+    schemas?: ISchema[];
+    getProperties(): IProperty[];
+    getEntityContainerItems(): IEntitySet[];
 }
 
 export interface IEntityType {
@@ -29,7 +32,7 @@ export interface IEntityType {
     properties?: IProperty[];
 }
 
-export interface IMapEntry {
+export interface ICacheEntry {
     lines: Array<string>;
     metadata: IMetadata;
 }
@@ -85,9 +88,6 @@ export interface ISchema {
     entityContainers?: IEntityContainer[];
 }
 
-export interface IMetadata {
-    schemas?: ISchema[];
-}
 
 function getChildOrProperty(element: XmlElement, nodeName: string): string {
     if (element.attr[nodeName]) {
@@ -95,6 +95,31 @@ function getChildOrProperty(element: XmlElement, nodeName: string): string {
     } else {
         return element.valueWithPath(nodeName);
     }
+}
+
+class Metadata implements IMetadata {
+    schemas?: ISchema[];
+
+    constructor(schemas?: ISchema[]) {
+        this.schemas = schemas;
+    }
+
+    getEntityContainerItems(): IEntitySet[] {
+        let containerEntities = _.chain(this.schemas)
+            .flatMap(s => _.flatMap(s.entityContainers, c =>  _.flatMap(c.entitySets)))
+            .uniq()
+            .value();
+        return containerEntities;
+    }
+
+    getProperties(): IProperty[] {
+        let items = _.chain(this.schemas)
+                    .flatMap(s => _.flatMap(s.entityTypes))
+                    .flatMap(e => e.properties)
+                    .uniq()
+                    .value();
+        return items;
+    }    
 }
 
 export class ODataMetadataParser {
@@ -105,9 +130,7 @@ export class ODataMetadataParser {
 
     parseDocument(document: XmlDocument): IMetadata {
         let dataServices = document.childNamed("edmx:DataServices");
-        return <IMetadata>{
-            schemas: this.parseCollection(dataServices, "Schema", (e) => this.parseSchema(e))
-        };
+        return new Metadata(this.parseCollection(dataServices, "Schema", (e) => this.parseSchema(e)))
     }
 
     parseSchema(element: XmlElement): ISchema {
@@ -211,50 +234,35 @@ export function createPropertyMap(metadata: IMetadata): { [id: string]: IPropert
 
 export class LocalODataMetadataService implements IODataMetadataService {
     configuration: ODataMetadataConfiguration;
-    cache: { [key: string]: IMapEntry } = {};
+    cache: { [key: string]: ICacheEntry } = {};
     
 
     constructor(configuration: ODataMetadataConfiguration) {
         this.configuration = configuration;
     }
 
-    getEntityContainerItems(metadata: IMetadata): IEntitySet[] {
-        let containerEntities = _.chain(metadata.schemas)
-            .flatMap(s => _.flatMap(s.entityContainers, c =>  _.flatMap(c.entitySets)))
-            .uniq()
-            .value();
-        return containerEntities;
+    getMetadataPath(configurationMapEntry: IODataMetadataConfigurationMapEntry): string {
+        if (path.isAbsolute(configurationMapEntry.path)) {
+            return configurationMapEntry.path;
+        } else {
+            if (vscode.workspace.workspaceFolders[0]) {
+                return path.join(vscode.workspace.workspaceFolders[0].toString(), configurationMapEntry.path);
+            } else {
+                return configurationMapEntry.path;
+            }
+        }
     }
 
-    getProperties(metadata: IMetadata): IProperty[] {
-        let items = _.chain(metadata.schemas)
-                    .flatMap(s => _.flatMap(s.entityTypes))
-                    .flatMap(e => e.properties)
-                    .uniq()
-                    .value();
-        return items;
+    hasMapEntry(serviceRoot: string): boolean {
+        return !!this.configuration.map.find(m => serviceRoot.toLowerCase().startsWith(m.url.toLowerCase()));
     }
 
-    getMetadataPath(mapEntry): string {
-        return path.isAbsolute(mapEntry.path)
-                ? mapEntry.path
-                : vscode.workspace.workspaceFolders[0]
-                ? path.join(vscode.workspace.workspaceFolders[0].toString(), mapEntry.path)
-                : mapEntry.path;
+    getMapEntry(serviceRoot: string): IODataMetadataConfigurationMapEntry {
+        return this.configuration.map.find(m => serviceRoot.toLowerCase().startsWith(m.url.toLowerCase()));
     }
 
-    hasMapEntry(tree: Syntax.SyntaxTree): boolean {
-        let serviceRoot = tree.root.serviceRoot.toLowerCase();
-        return !!this.configuration.map.find(m => serviceRoot.startsWith(m.url.toLowerCase()));
-    }
-
-    getMapEntry(tree: Syntax.SyntaxTree): IODataMetadataConfigurationMapEntry {
-        let serviceRoot = tree.root.serviceRoot.toLowerCase();
-        return this.configuration.map.find(m => serviceRoot.startsWith(m.url.toLowerCase()));
-    }
-
-    getMetadataDocumentLines(tree: Syntax.SyntaxTree): string[] {
-        let mapEntry = this.getMapEntry(tree);
+    getMetadataDocumentLines(serviceRoot: string): string[] {
+        let mapEntry = this.getMapEntry(serviceRoot);
         if (mapEntry) {
             if (this.cache[mapEntry.path] === undefined) {
                 let metadataPath = this.getMetadataPath(mapEntry);
@@ -269,8 +277,8 @@ export class LocalODataMetadataService implements IODataMetadataService {
         }
     }
 
-    getMetadataForDocument(tree: Syntax.SyntaxTree): IMetadata {
-        let mapEntry = this.getMapEntry(tree);
+    getMetadataDocument(serviceRoot: string): IMetadata {
+        let mapEntry = this.getMapEntry(serviceRoot);
         if (mapEntry) {
             if (this.cache[mapEntry.path] === undefined) {
                 let metadataPath = this.getMetadataPath(mapEntry);

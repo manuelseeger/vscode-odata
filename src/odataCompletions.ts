@@ -11,6 +11,22 @@ import {
 export class ODataDefaultCompletionItemProvider implements vscode.CompletionItemProvider {
     triggerCharacters = [".", "=", ",", "(", "/", "'"];
     provideCompletionItems(document: TextDocument, position: Position, token: CancellationToken): ProviderResult<CompletionList> {
+        if (document.getWordRangeAtPosition(position, /\$[a-zA-Z]*/)) {
+            return null;
+        }
+        if (document.getWordRangeAtPosition(position, /\$select=.*/)) {
+            return null;
+        }
+        if (document.getWordRangeAtPosition(position, /\$inlinecount=.*/)) {
+            return new CompletionList([new CompletionItem("allpages", CompletionItemKind.EnumMember)])
+        }
+        if (document.getWordRangeAtPosition(position, /\$format=.*/)) {
+            return new CompletionList([
+                new CompletionItem("json", CompletionItemKind.EnumMember),
+                new CompletionItem("xml", CompletionItemKind.EnumMember)
+            ])
+        }
+
         let functions = [
             new CompletionItem("filter", CompletionItemKind.Function),
             new CompletionItem("groupby", CompletionItemKind.Function),
@@ -18,7 +34,8 @@ export class ODataDefaultCompletionItemProvider implements vscode.CompletionItem
             new CompletionItem("contains", CompletionItemKind.Function),
             new CompletionItem("startswith", CompletionItemKind.Function),
             new CompletionItem("endswith", CompletionItemKind.Function),
-            new CompletionItem("datetimeoffset", CompletionItemKind.Function)
+            new CompletionItem("datetimeoffset", CompletionItemKind.Function),
+            new CompletionItem("datetime", CompletionItemKind.Function)
             // TODO: Add all functions
         ];
         return new CompletionList(functions);
@@ -99,6 +116,34 @@ export class ODataSystemQueryCompletionItemProvider implements vscode.Completion
                     filterText: "count",
                     documentation: "Allows clients to request a count of the matching resources included with the resources in the response",
                     kind: CompletionItemKind.Keyword
+                },
+                {
+                    label: "$inlinecount",
+                    insertText: "inlinecount",
+                    filterText: "inlinecount",
+                    documentation: "Indicates that the response to the request has to include the count of the number of entities in the EntitySet",
+                    kind: CompletionItemKind.Keyword
+                },
+                {
+                    label: "$skiptoken",
+                    insertText: "skiptoken",
+                    filterText: "skiptoken",
+                    documentation: "Identifies a starting point in the collection of entities identified by the URI containing the $skiptoken parameter",
+                    kind: CompletionItemKind.Keyword
+                },
+                {
+                    label: "$compute",
+                    insertText: "compute",
+                    filterText: "compute",
+                    documentation: "Allows clients to define computed properties that can be used in a $select or within a $filter or $orderby expression",
+                    kind: CompletionItemKind.Keyword
+                },
+                {
+                    label: "$schemaversion",
+                    insertText: "schemaversion",
+                    filterText: "schemaversion",
+                    documentation: "The value specifies the version of the schema against which the request is made",
+                    kind: CompletionItemKind.Keyword
                 }
             ]);
         }
@@ -107,6 +152,7 @@ export class ODataSystemQueryCompletionItemProvider implements vscode.Completion
 
 export class ODataMetadataCompletionItemProvider implements vscode.CompletionItemProvider {
     triggerCharacters = [".", "=", ",", "(", "/", "'"];
+    noMetadataCompletionOn = /\$(format|top|skip|count|skiptoken|compute|schemaversion|inlinecount)=.*/;
     metadataService: IODataMetadataService;
 
     constructor(metadataService: IODataMetadataService) {
@@ -115,16 +161,20 @@ export class ODataMetadataCompletionItemProvider implements vscode.CompletionIte
 
     provideCompletionItems(document: TextDocument, position: Position, token: CancellationToken): ProviderResult<CompletionList> {
         try {
+            if (document.getWordRangeAtPosition(position, this.noMetadataCompletionOn)) {
+                return null;
+            }
             let tree = syntax.Parser.parse(document.getText());
+            let serviceRoot = tree.root.serviceRoot.toString();
             
-            let mapEntry = this.metadataService.getMapEntry(tree);
+            let mapEntry = this.metadataService.getMapEntry(serviceRoot);
             if (!mapEntry) {
                 return null;
             }
-            const metadata = this.metadataService.getMetadataForDocument(tree)
+            const metadata = this.metadataService.getMetadataDocument(serviceRoot);
             if (document.getWordRangeAtPosition(position, /\/[a-zA-Z]*/)) {
                 // complete for entitysets
-                let containerEntities = _.chain(metadata.schemas)
+                let containerEntities =_.chain(metadata.schemas)
                     .flatMap(s => _.flatMap(s.entityContainers, c =>  _.flatMap(c.entitySets, e => e.name)))
                     .uniq()
                     .map(p => new CompletionItem(p, CompletionItemKind.Class))
@@ -133,11 +183,8 @@ export class ODataMetadataCompletionItemProvider implements vscode.CompletionIte
                 return new CompletionList(containerEntities);
             } 
             
-            if (document.getWordRangeAtPosition(position, /\$(format|top|skip|count)=.*/)) {
-                return null;
-            }
             // complete for properties of entities found in the query document
-            let entitySetTypeNames = this.metadataService.getEntityContainerItems(metadata)
+            let entitySetTypeNames = metadata.getEntityContainerItems()
                                     .filter(es => document.getText().indexOf(es.name) > -1)
                                     .map(es => es.entityType.split('.').pop());
 

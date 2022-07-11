@@ -8,7 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.1.1] - 
 - Update dependencies, vscode dev and testing template
-- Fix and improve URL formatting and parsing
+- Fix and improve URL formatting and metadata and query document parsing
+- Improve metadata-driven completion
+- Added hovers and navigation to metadata definitions
 
 ## [0.1.0] - 2017-10-15
 - Changed scope of commands to current selection or consecutive non-empty lines.

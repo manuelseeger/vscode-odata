@@ -13,7 +13,6 @@
     "exclude": [
         "out",
         "node_modules",
-        ".vscode-test",
-        "gruntfile.js"
+        ".vscode-test"
     ]
 }
