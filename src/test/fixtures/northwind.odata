@@ -1,6 +1,5 @@
 https://services.odata.org/V4/Northwind/Northwind.svc/Customers?
     $select=CompanyName,ContactTitle,CustomerID
     &$top=10
-
     &$skip=10
     &$expand=Orders($select=OrderID,CustomerID,Freight)
