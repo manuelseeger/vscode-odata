@@ -10,7 +10,7 @@ suite("Metadata Tests", () => {
     let configuration = <odataMetadata.ODataMetadataConfiguration>{
         map: [
             {
-                url: 'https://services.odata.org/Experimental/Northwind/Northwind.svc',
+                url: 'https://services.odata.org/V4/Northwind/Northwind.svc',
                 path: path.join(fixturesPath, 'northwind$metadata.xml')
             },
             {
@@ -23,7 +23,7 @@ suite("Metadata Tests", () => {
     const metadataService = new odataMetadata.LocalODataMetadataService(configuration);
 
     test('Can parse Northwind', (done) => {
-        const metadata = metadataService.getMetadataDocument('https://services.odata.org/Experimental/Northwind/Northwind.svc');
+        const metadata = metadataService.getMetadataDocument('https://services.odata.org/V4/Northwind/Northwind.svc');
         const containerEntities = metadata.getEntityContainerItems();
         assert.equal(containerEntities.length, 26);
         assert.ok(containerEntities.find(c => c.name == 'CustomerDemographics'));

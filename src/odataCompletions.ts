@@ -17,6 +17,9 @@ export class ODataDefaultCompletionItemProvider implements vscode.CompletionItem
         if (document.getWordRangeAtPosition(position, /\$select=.*/)) {
             return null;
         }
+        if (document.getWordRangeAtPosition(position, /\/[a-zA-Z]*/)) {
+            return null;
+        }
         if (document.getWordRangeAtPosition(position, /\$inlinecount=.*/)) {
             return new CompletionList([new CompletionItem("allpages", CompletionItemKind.EnumMember)])
         }
