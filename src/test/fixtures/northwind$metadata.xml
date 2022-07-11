@@ -380,9 +380,6 @@
                 <Property Name="OrderID" Type="Edm.Int32" Nullable="false" />
                 <Property Name="Subtotal" Type="Edm.Decimal" Precision="19" Scale="4" />
             </EntityType>
-            <Annotations Target="ODataWebExperimental.Northwind.Model.NorthwindEntities">
-                <Annotation Term="Com.Microsoft.OData.Service.Conventions.V1.UrlConventions" String="KeyAsSegment" />
-            </Annotations>
         </Schema>
         <Schema Namespace="ODataWebExperimental.Northwind.Model" xmlns="http://docs.oasis-open.org/odata/ns/edm">
             <EntityContainer Name="NorthwindEntities" p4:LazyLoadingEnabled="true" xmlns:p4="http://schemas.microsoft.com/ado/2009/02/edm/annotation">

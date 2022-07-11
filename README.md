@@ -18,11 +18,13 @@ In the first release this extension adds the capabilities listed below. Only sta
 ## Metadata Awareness
 The extension provides basic IntelliSense for the OData query language based on service metadata. 
 ### Metadata driven code completion
-Provide basic Intellisense based on OData metadata: 
+Provide basic Intellisense based on OData metadata.
+
 ![odata-combine](./images/metadata-complete.gif)
 
 ### Metadata driven code navigation
-Navigate to metadata definitions from entities and properties: 
+Navigate to metadata definitions from entities and properties.
+
 ![odata-combine](./images/metadata-definition.gif)
 
 ## Commands
