@@ -1,4 +1,19 @@
 # OData for Visual Studio Code
+
+------
+------
+------
+
+**Discontinued. Check out my new OData VSCode extension at**
+https://github.com/manuelseeger/odata-vscode
+
+
+
+------
+------
+------
+
+
 OData for Visual Studio Code is an extension for [Visual Studio Code](https://code.visualstudio.com) that adds rich language support for the [OData](http://www.odata.org) query language.
 
 > This is a fork from [/StanislawSwierc/vscode-odata](https://github.com/StanislawSwierc/vscode-odata), which appears to be discontinued. The fork fixes some issues and adds features. All the heavy lifting has been done by the original authors. \
